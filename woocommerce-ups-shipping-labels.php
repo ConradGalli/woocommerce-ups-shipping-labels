@@ -35,15 +35,12 @@ if ( ! function_exists( 'woothemes_queue_update' ) || ! function_exists( 'is_woo
 }
 
 if( ! extension_loaded( 'soap' ) ) {
-	function my_admin_notice() {
-	    printf( '<div class="error"><p>%s</p></div>', __( 'The <a href="http://www.php.net/manual/en/book.soap.php" target="_blank">SOAP extension</a> must be enabled to use WooCommerce UPS Shipping Labels.', 'woocommerce-ups' ) );
-	}
-	add_action( 'admin_notices', 'my_admin_notice' );
+	WC_UPS_SL::admin_error( 'The <a href="http://www.php.net/manual/en/book.soap.php" target="_blank">SOAP extension</a> must be enabled to use WooCommerce UPS Shipping Labels.' );
 
 	return;
 }
 
-require_once 'woocommerce-get-labels.php';
+add_action( 'admin_notices', WC_UPS_SL . '::admin_error' );
 
 /**
  * Check if WooCommerce is active, and if it isn't, disable Subscriptions.
@@ -67,23 +64,27 @@ class WC_UPS_SL {
 	 */
 	public static $option_prefix = 'woocommerce_ups';
 
+	public static function admin_error( $message ) {
+		if( empty( $message ) || ! isset( $message ) ) return;
+
+		printf( '<div class="error"><p>%s</p></div>', __( $message, 'woocommerce-ups' ) );
+	}
+
 	/**
 	 * 
 	 * 
 	 * @return type
 	 */
 	public function init() {
-		// Add tab to WooCommerce settings page
+		// Include required libs
+		require_once 'woocommerce-get-labels.php';
+
 		add_filter( 'woocommerce_settings_tabs_array', array( $this, 'add_ups_settings_tab' ) );
 
-		// Fields for the WooCommerce settings page
 		add_action( 'woocommerce_settings_tabs_shipping_labels', array( $this, 'add_ups_settings_page' ) );
-
-		// Called when updating settings page
 		add_action( 'woocommerce_update_options_' . self::$tab_name, array( $this, 'update_ups_settings' ) );
-
-		// Add shipping label box to orders page
 		add_action( 'add_meta_boxes', array( $this, 'add_ups_meta_box' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'add_admin_scripts' ) );
 	}
 
 	/**
@@ -123,17 +124,92 @@ class WC_UPS_SL {
 	 * @return type
 	 */
 	public function ups_meta_box() {
-		global $post;
+		global $post; ?>
+		<div class="woocommerce-shipping-label-meta-box">
+			<select name="" id="woocommerce-shipping-label-print-option" class="woocommerce-shipping-label-print-option">
+				<option value="">Select Shipping Carrier</option>
+				<option value="fedex">Fedex</option>
+				<option value="ups">UPS</option>
+				<option value="usps">USPS</option>
+			</select>
+
+			<button type="button" class="button button-primary woocommerce-shipping-label-option-button" id="woocommerce-shipping-label-option-button"><?php _e( 'Generate Label', 'woocommerce-ups' ); ?></button>
+		</div>
+	<?php
+	}
+
+	public function add_admin_scripts( $hook ) {
+		if( 'post.php' != $hook ) return;
+
+		wp_enqueue_style( 'woocommerce-shipping-labels-css', plugins_url( 'css/woocommerce-shipping-labels.css', __FILE__ ) );
+
+		wp_enqueue_script( 'woocommerce-shipping-labels-js', plugins_url( 'js/woocommerce-shipping-labels.js', __FILE__ ), array( 'jquery' ), '1.0', true );
+	}
+
+	public function validateUPSCredentials() {
+		$errors = array();
+
+		switch( true ) {
+
+			// UPS account number empty
+			case get_option( self::$option_prefix . '_ups_account_number' ) == '':
+				$errors[] = 'UPS account number required.';
+				break;
+
+			// UPS account number empty
+			case get_option( self::$option_prefix . '_ups_access_key' ) == '':
+				$errors[] = 'UPS access key required.';
+				break;
+
+			// UPS account number empty
+			case get_option( self::$option_prefix . '_ups_username' ) == '':
+				$errors[] = 'UPS account username required.';
+				break;
+
+			// UPS account number empty
+			case get_option( self::$option_prefix . '_ups_password' ) == '':
+				$errors[] = 'UPS account password required.';
+				break;
+
+			default:
+				//
+		}
+
+		// If no errors return true
+		if( empty( $errors ) )
+			return true;
+
+		// Admin message for each error
+		foreach( $errors as $message )
+			WC_UPS_SL::admin_error( $message );
+
+		return false;
+	}
+
+	public function generateLabel() {
+		$this->validateUPSCredentials();
 
 		// Order details
 		$order = new WC_Order( $post->ID );
 
 		// Verify shipping details are set
-		if( ! $order->get_shipping_address() ) {
+		if( ! $order->get_shipping_address() )
 			return printf( '<p><em>%s</em></p>', __( 'Shipping details required.', 'woocommerce-ups' ) );
-		}
 
-		return printf( '<button class="button" id="ups-shipping-label-button">%s</button>', __( 'Print Label', 'woocommerce-ups' ) );
+		$address = array(
+			'address_1' => $order->shipping_address_1,
+			'address_2' => $order->shipping_address_2,
+			'city' => $order->shipping_city,
+			'state' => $order->shipping_state,
+			'postcode' => $order->shipping_postcode,
+			'country' => $order->shipping_country );
+
+
+		$label = new WC_UPS_Label( $address );
+		$label->createShipment();
+		$label->createPackage();
+
+		print '<div class="wc_ups_labels">' . $label->createLabel() . '</div>';
 	}
 
 	public function get_settings() {
@@ -159,6 +235,15 @@ class WC_UPS_SL {
 		),
 
 		array(
+			'name'     => __( 'Attention name', 'woocommerce-ups' ),
+			'desc'     => __( 'A product displays a button with the text "Add to Cart". By default, a subscription changes this to "Sign Up Now". You can customise the button text for subscriptions here.', 'woocommerce-ups' ),
+			'id'       => self::$option_prefix . '_attention_name',
+			'css'      => 'min-width:150px;',
+			'type'     => 'text',
+			'desc_tip' => true,
+		),
+
+		array(
 			'name'     => __( 'Phone', 'woocommerce-ups' ),
 			'desc'     => __( 'Use this field to customise the text displayed on the checkout button when an order contains a subscription. Normally the checkout submission button displays "Place Order". When the cart contains a subscription, this is changed to "Sign Up Now".', 'woocommerce-ups' ),
 			'id'       => self::$option_prefix . '_phone',
@@ -177,9 +262,27 @@ class WC_UPS_SL {
 		),
 
 		array(
-			'name'     => __( 'Address', 'woocommerce-ups' ),
+			'name'     => __( 'Address 1', 'woocommerce-ups' ),
 			'desc'     => __( 'Use this field to customise the text displayed on the checkout button when an order contains a subscription. Normally the checkout submission button displays "Place Order". When the cart contains a subscription, this is changed to "Sign Up Now".', 'woocommerce-ups' ),
 			'id'       => self::$option_prefix . '_address',
+			'css'      => 'min-width:300px;',
+			'type'     => 'text',
+			'desc_tip' => true,
+		),
+
+		array(
+			'name'     => __( 'Address 2', 'woocommerce-ups' ),
+			'desc'     => __( 'Use this field to customise the text displayed on the checkout button when an order contains a subscription. Normally the checkout submission button displays "Place Order". When the cart contains a subscription, this is changed to "Sign Up Now".', 'woocommerce-ups' ),
+			'id'       => self::$option_prefix . '_address_2',
+			'css'      => 'min-width:300px;',
+			'type'     => 'text',
+			'desc_tip' => true,
+		),
+
+		array(
+			'name'     => __( 'Address 3', 'woocommerce-ups' ),
+			'desc'     => __( 'Use this field to customise the text displayed on the checkout button when an order contains a subscription. Normally the checkout submission button displays "Place Order". When the cart contains a subscription, this is changed to "Sign Up Now".', 'woocommerce-ups' ),
+			'id'       => self::$option_prefix . '_address_3',
 			'css'      => 'min-width:300px;',
 			'type'     => 'text',
 			'desc_tip' => true,
@@ -198,6 +301,24 @@ class WC_UPS_SL {
 			'name'     => __( 'State', 'woocommerce-ups' ),
 			'desc'     => __( 'Use this field to customise the text displayed on the checkout button when an order contains a subscription. Normally the checkout submission button displays "Place Order". When the cart contains a subscription, this is changed to "Sign Up Now".', 'woocommerce-ups' ),
 			'id'       => self::$option_prefix . '_state',
+			'css'      => 'min-width:150px;',
+			'type'     => 'text',
+			'desc_tip' => true,
+		),
+
+		array(
+			'name'     => __( 'Postal Code', 'woocommerce-ups' ),
+			'desc'     => __( 'Use this field to customise the text displayed on the checkout button when an order contains a subscription. Normally the checkout submission button displays "Place Order". When the cart contains a subscription, this is changed to "Sign Up Now".', 'woocommerce-ups' ),
+			'id'       => self::$option_prefix . '_postcode',
+			'css'      => 'max-width:80px;',
+			'type'     => 'text',
+			'desc_tip' => true,
+		),
+
+		array(
+			'name'     => __( 'Country', 'woocommerce-ups' ),
+			'desc'     => __( 'Use this field to customise the text displayed on the checkout button when an order contains a subscription. Normally the checkout submission button displays "Place Order". When the cart contains a subscription, this is changed to "Sign Up Now".', 'woocommerce-ups' ),
+			'id'       => self::$option_prefix . '_country',
 			'css'      => 'min-width:150px;',
 			'type'     => 'text',
 			'desc_tip' => true,

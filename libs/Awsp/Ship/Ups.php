@@ -504,10 +504,13 @@ class Ups implements ShipperInterface {
         }
         catch(\Exception $e) {
             // extract the error details from SoapFault object
-            $error_detail = serialize($e->detail->Errors->ErrorDetail);
+            $error_detail = $e->detail->Errors->ErrorDetail;
+
+            \WC_UPS_SL::admin_error( __( 'UPS Error: ', 'woocommerce-ups' ) . $error_detail->PrimaryErrorCode->Description );
+
+            //print_r( $error_detail );
             // rethrow a more useful exception message
-            throw new \Exception('UPS SOAP Request failed - ' . $e->getMessage() . ' - Serialized Details: ' 
-                    . $error_detail);
+           // throw new \Exception('UPS SOAP Request failed - ' . $e->getMessage() . ' - Serialized Details: ' . $error_detail);
         }
    }
     

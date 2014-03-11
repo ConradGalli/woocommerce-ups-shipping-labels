@@ -1,0 +1,16 @@
+.woocommerce-shipping-label-meta-box {
+	overflow: hidden;
+}
+.woocommerce-shipping-label-print-option {
+	width: 100%;
+	margin: 1px 0 8px 0;
+}
+.woocommerce-shipping-label-option-button {
+	float: right;
+}
+.wc_ups_labels {
+	margin: 1em 0
+}
+.wc_ups_labels img {
+	max-width: 100%;
+}
