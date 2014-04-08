@@ -1,96 +1,61 @@
 <?php
-/**
- * Plugin Name: WooCommerce UPS Shipping Labels
- * Plugin URI: http://www.dkjensen.com/
- * Description: View and print UPS shipping labels automatically
- * Author: David Jensen
- * Author URI: http://dkjensen.com/
- * Version: 1.0
- *
- * Copyright 2013  Leonard's Ego Pty. Ltd.  (email : freedoms@leonardsego.com)
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * @package		WooCommerce UPS Shipping Labels
- * @author		David Jensen
- * @since		1.0
- */
 
-/**
- * Required functions
- */
-if ( ! function_exists( 'woothemes_queue_update' ) || ! function_exists( 'is_woocommerce_active' ) ) {
-	require_once( 'woo-includes/woo-functions.php' );
-}
+class WC_Shipping_Labels {
 
-if( ! extension_loaded( 'soap' ) ) {
-	WC_UPS_SL::admin_error( 'The <a href="http://www.php.net/manual/en/book.soap.php" target="_blank">SOAP extension</a> must be enabled to use WooCommerce UPS Shipping Labels.' );
-
-	return;
-}
-
-add_action( 'admin_notices', WC_UPS_SL . '::admin_error' );
-
-/**
- * Check if WooCommerce is active, and if it isn't, disable Subscriptions.
- *
- * @since 1.0
- */
-if ( ! is_woocommerce_active() ) {
-	add_action( 'admin_notices', 'WC_UPS_SL::woocommerce_inactive_notice' );
-	return;
-}
-
-class WC_UPS_SL {
-
-	/**
-	 * WooCommerce settings tab name
-	 */
+	//WooCommerce settings tab name
 	public static $tab_name = 'shipping_labels';
 
-	/**
-	 * Prefix for options
-	 */
+	// Prefix for options
 	public static $option_prefix = 'woocommerce_ups';
 
-	public static function admin_error( $message ) {
-		if( empty( $message ) || ! isset( $message ) ) return;
+	// Folder to store generated shipping labels
+	public static $labels_directory = 'shipping-labels';
 
-		printf( '<div class="error"><p>%s</p></div>', __( $message, 'woocommerce-ups' ) );
-	}
+	// List of carriers
+	public static $carriers = array(
+		'ups' => array(
+			'enabled' => true,
+			'label' => 'UPS',
+			'object' => 'WC_UPS_Label' )
+	);
 
 	/**
-	 * 
+	 * Initiation
 	 * 
 	 * @return type
 	 */
-	public function init() {
-		// Include required libs
-		require_once 'woocommerce-get-labels.php';
+	public function __construct() {
+		add_filter( 'woocommerce_settings_tabs_array', array( $this, 'add_settings_tab' ) );
 
-		add_filter( 'woocommerce_settings_tabs_array', array( $this, 'add_ups_settings_tab' ) );
+		add_action( 'woocommerce_settings_tabs_shipping_labels', array( $this, 'add_settings_page' ) );
+		add_action( 'woocommerce_update_options_' . self::$tab_name, array( $this, 'update_settings' ) );
+		add_action( 'add_meta_boxes', array( $this, 'add_meta_box' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'admin_scripts' ) );
+		add_action( 'wp_ajax_generateLabel', array( $this, 'generateLabel' ) );
+	}
 
-		add_action( 'woocommerce_settings_tabs_shipping_labels', array( $this, 'add_ups_settings_page' ) );
-		add_action( 'woocommerce_update_options_' . self::$tab_name, array( $this, 'update_ups_settings' ) );
-		add_action( 'add_meta_boxes', array( $this, 'add_ups_meta_box' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'add_admin_scripts' ) );
+	/**
+	 * Function to be called on plugin activation
+	 * 
+	 * @return type
+	 */
+	public function activate() {
+		// Determine content directory
+		$content_directory = WP_CONTENT_DIR;
+		$content_directory = $content_directory . DIRECTORY_SEPARATOR . self::$labels_directory;
+
+		// Create shipping label directory
+		if( ! file_exists( $content_directory ) || ! is_dir( $content_directory ) ) {
+			if( ! mkdir( $content_directory ) ) {
+				WC_Shipping_Labels_Error( 'Could not create shipping label directory. Please create a directory located at {$content_directory} and <a href="http://codex.wordpress.org/Changing_File_Permissions" target="_blank">modify the permissions to 0777</a>.' );
+			}
+		}
 	}
 
 	/**
 	 * Adds a tab to the WooCommerce settings page
 	 */
-	public function add_ups_settings_tab( $settings_tabs ) {
+	public function add_settings_tab( $settings_tabs ) {
 		$settings_tabs[self::$tab_name] = __( 'Shipping Labels', 'woocommerce-ups' );
 
 		return $settings_tabs;
@@ -99,14 +64,14 @@ class WC_UPS_SL {
 	/**
 	 * The content for the settings page
 	 */
-	public function add_ups_settings_page() {
+	public function add_settings_page() {
 		woocommerce_admin_fields( self:: get_settings() );
 	}
 
 	/**
 	 * Update settings page fields
 	 */
-	public function update_ups_settings() {
+	public function update_settings() {
 		woocommerce_update_options( self::get_settings() );
 	}
 
@@ -114,8 +79,8 @@ class WC_UPS_SL {
 	 * Add a meta box to the orders page
 	 * Generate UPS shipping label
 	 */
-	public function add_ups_meta_box() {
-		add_meta_box( 'woocommerce-ups-shipping-label', __( 'UPS Shipping Label', 'woocommerce-ups' ), array( $this, 'ups_meta_box' ), 'shop_order', 'side', 'default' );
+	public function add_meta_box() {
+		add_meta_box( 'woocommerce-ups-shipping-label', __( 'UPS Shipping Label', 'woocommerce-ups' ), array( $this, 'meta_box' ), 'shop_order', 'side', 'default' );
 	}
 
 	/**
@@ -123,14 +88,15 @@ class WC_UPS_SL {
 	 * 
 	 * @return type
 	 */
-	public function ups_meta_box() {
+	public function meta_box() {
 		global $post; ?>
-		<div class="woocommerce-shipping-label-meta-box">
-			<select name="" id="woocommerce-shipping-label-print-option" class="woocommerce-shipping-label-print-option">
+		<div class="woocommerce-shipping-label-meta-box" data-order="<?php print $post->ID; ?>">
+			<div id="woocommerce-shipping-label-message-area"></div>
+			<select name="wc_shipping_label_carrier" id="woocommerce-shipping-label-print-option" class="woocommerce-shipping-label-print-option">
 				<option value="">Select Shipping Carrier</option>
-				<option value="fedex">Fedex</option>
-				<option value="ups">UPS</option>
-				<option value="usps">USPS</option>
+				<?php foreach( self::$carriers as $carrier => $options ) : ?>
+					<option value="<?php print $carrier; ?>"><?php print $options['label']; ?></option>
+				<?php endforeach; ?>
 			</select>
 
 			<button type="button" class="button button-primary woocommerce-shipping-label-option-button" id="woocommerce-shipping-label-option-button"><?php _e( 'Generate Label', 'woocommerce-ups' ); ?></button>
@@ -138,12 +104,12 @@ class WC_UPS_SL {
 	<?php
 	}
 
-	public function add_admin_scripts( $hook ) {
+	public function admin_scripts( $hook ) {
 		if( 'post.php' != $hook ) return;
 
-		wp_enqueue_style( 'woocommerce-shipping-labels-css', plugins_url( 'css/woocommerce-shipping-labels.css', __FILE__ ) );
+		wp_enqueue_style( 'woocommerce-shipping-labels-css', plugins_url( 'css/woocommerce-shipping-labels.css', WC_SHIPPING_LABELS_DIR ) );
 
-		wp_enqueue_script( 'woocommerce-shipping-labels-js', plugins_url( 'js/woocommerce-shipping-labels.js', __FILE__ ), array( 'jquery' ), '1.0', true );
+		wp_enqueue_script( 'woocommerce-shipping-labels-js', plugins_url( 'js/woocommerce-shipping-labels.js', WC_SHIPPING_LABELS_DIR ), array( 'jquery' ), '1.0', true );
 	}
 
 	public function validateUPSCredentials() {
@@ -181,20 +147,48 @@ class WC_UPS_SL {
 
 		// Admin message for each error
 		foreach( $errors as $message )
-			WC_UPS_SL::admin_error( $message );
+			WC_Shipping_Labels_Error( $message );
 
 		return false;
 	}
 
 	public function generateLabel() {
+		$orderID = $_POST['orderID'];
+		$carrier = $_POST['carrier'];
+
+		// Can we get the order ID?
+		if( ! isset( $orderID ) || empty( $orderID ) ) {
+			return WC_Shipping_Labels_Error( 'An error occured while attempting to retrieve the order ID.' );
+		}
+
+		// Verify that the carrier is set
+		if( ! isset( $carrier ) || empty( $carrier ) ) {
+			return WC_Shipping_Labels_Error( 'Please select a carrier.' );
+		}
+
+		// Get carrier stuff
+		$carrier = self::$carriers[$carrier];
+
+		// Make sure the carrier is ready and enabled
+		if( isset( $carrier ) && $carrier['enabled'] === true ) {
+			// Does the carriers class exist?
+			if( ! class_exists( $carrier['object'] ) ) {
+				return $this->meta_error( 'The specified carrier object does not exist.' );
+			}
+
+			// If all is well, grab the carrier object
+			$carrierObj = $carrier['object'];
+		}
+
 		$this->validateUPSCredentials();
 
 		// Order details
-		$order = new WC_Order( $post->ID );
+		$order = new WC_Order( $orderID );
 
 		// Verify shipping details are set
-		if( ! $order->get_shipping_address() )
-			return printf( '<p><em>%s</em></p>', __( 'Shipping details required.', 'woocommerce-ups' ) );
+		if( ! $order->get_shipping_address() ) {
+			return $this->meta_error( 'Shipping details required.' );
+		}
 
 		$address = array(
 			'address_1' => $order->shipping_address_1,
@@ -205,11 +199,12 @@ class WC_UPS_SL {
 			'country' => $order->shipping_country );
 
 
-		$label = new WC_UPS_Label( $address );
+		$label = new $carrierObj( $address );
 		$label->createShipment();
 		$label->createPackage();
 
 		print '<div class="wc_ups_labels">' . $label->createLabel() . '</div>';
+		exit;
 	}
 
 	public function get_settings() {
@@ -393,7 +388,3 @@ class WC_UPS_SL {
 	}
 
 }
-
-
-$UPS = new WC_UPS_SL;
-$UPS->init();

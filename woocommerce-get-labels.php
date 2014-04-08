@@ -59,17 +59,17 @@ class WC_UPS_Label {
 		/**
 		 * Information pulled from WooCommerce settings
 		 */
-		$config['shipper_name'] 		  = get_option( WC_UPS_SL::$option_prefix . '_name' ); 
-		$config['shipper_attention_name'] = get_option( WC_UPS_SL::$option_prefix . '_attention_name' ); 
-		$config['shipper_phone'] 		  = get_option( WC_UPS_SL::$option_prefix . '_phone' ); 
-		$config['shipper_email'] 		  = get_option( WC_UPS_SL::$option_prefix . '_email' );
-		$config['shipper_address1'] 	  = get_option( WC_UPS_SL::$option_prefix . '_address' ); 
-		$config['shipper_address2'] 	  = get_option( WC_UPS_SL::$option_prefix . '_address_2' );
-		$config['shipper_address3'] 	  = get_option( WC_UPS_SL::$option_prefix . '_address_3' ); 
-		$config['shipper_city'] 		  = get_option( WC_UPS_SL::$option_prefix . '_city' );
-		$config['shipper_state'] 		  = get_option( WC_UPS_SL::$option_prefix . '_state' ); 
-		$config['shipper_postal_code']    = get_option( WC_UPS_SL::$option_prefix . '_postcode' ); 
-		$config['shipper_country_code']   = get_option( WC_UPS_SL::$option_prefix . '_country' ); 
+		$config['shipper_name'] 		  = get_option( WC_Shipping_Labels::$option_prefix . '_name' ); 
+		$config['shipper_attention_name'] = get_option( WC_Shipping_Labels::$option_prefix . '_attention_name' ); 
+		$config['shipper_phone'] 		  = get_option( WC_Shipping_Labels::$option_prefix . '_phone' ); 
+		$config['shipper_email'] 		  = get_option( WC_Shipping_Labels::$option_prefix . '_email' );
+		$config['shipper_address1'] 	  = get_option( WC_Shipping_Labels::$option_prefix . '_address' ); 
+		$config['shipper_address2'] 	  = get_option( WC_Shipping_Labels::$option_prefix . '_address_2' );
+		$config['shipper_address3'] 	  = get_option( WC_Shipping_Labels::$option_prefix . '_address_3' ); 
+		$config['shipper_city'] 		  = get_option( WC_Shipping_Labels::$option_prefix . '_city' );
+		$config['shipper_state'] 		  = get_option( WC_Shipping_Labels::$option_prefix . '_state' ); 
+		$config['shipper_postal_code']    = get_option( WC_Shipping_Labels::$option_prefix . '_postcode' ); 
+		$config['shipper_country_code']   = get_option( WC_Shipping_Labels::$option_prefix . '_country' ); 
 
 		
 		$this->shipping_address = $address;

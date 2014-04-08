@@ -506,7 +506,7 @@ class Ups implements ShipperInterface {
             // extract the error details from SoapFault object
             $error_detail = $e->detail->Errors->ErrorDetail;
 
-            \WC_UPS_SL::admin_error( __( 'UPS Error: ', 'woocommerce-ups' ) . $error_detail->PrimaryErrorCode->Description );
+            \WC_Shipping_Labels_Error( __( 'UPS Error: ', 'woocommerce-ups' ) . $error_detail->PrimaryErrorCode->Description );
 
             //print_r( $error_detail );
             // rethrow a more useful exception message
