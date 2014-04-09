@@ -46,7 +46,7 @@ class Ups implements ShipperInterface {
      *
      * @var array An array of UPS services.  The key is the service code and the value is the service description.
      */
-    protected $services = array(
+    static $services = array(
         '01' => 'Next Day Air',
         '02' => '2nd Day Air',
         '03' => 'Ground',

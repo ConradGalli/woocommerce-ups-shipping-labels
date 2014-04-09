@@ -11,6 +11,8 @@
  * @license MIT License http://www.opensource.org/licenses/mit-license.php
  * 
  */
+namespace Awsp\Ship;
+
 use \Awsp\Ship as Ship;
 
 $config = array();
@@ -18,28 +20,29 @@ $config = array();
 // require the config file and the autoloader file
 define('SHIP_PATH', plugin_dir_path( __FILE__ ) . 'libs/');
 
+require_once 'includes/config.php';
+require_once 'libs/Awsp/Ship/LabelResponse.php';
+require_once 'libs/Awsp/Ship/Package.php';
+require_once 'libs/Awsp/Ship/RateResponse.php';
+require_once 'libs/Awsp/Ship/Shipment.php';
+require_once 'libs/Awsp/Ship/ShipperInterface.php';
+require_once 'libs/Awsp/Ship/Ups.php';
+
 class WC_UPS_Label {
 
 	private $shipmentData,
 			$address;
 
-	public static $shipper = 'ups';
-
-	public static $service_code = '03';
-
 	public $Shipment,
-		   $ShipperObj;
+		   $ShipperObj,
+		   $service_code,
+		   $shipper;
 
-	public function __construct( array $address ) {
+	public function __construct( array $address, $shipper, $service_code ) {
 		global $config;
 
-		require_once 'includes/config.php';
-		require_once 'libs/Awsp/Ship/LabelResponse.php';
-		require_once 'libs/Awsp/Ship/Package.php';
-		require_once 'libs/Awsp/Ship/RateResponse.php';
-		require_once 'libs/Awsp/Ship/Shipment.php';
-		require_once 'libs/Awsp/Ship/ShipperInterface.php';
-		require_once 'libs/Awsp/Ship/Ups.php';
+		$this->shipper = $shipper;
+		$this->service_code = $service_code;
 
 		// true for production or false for development
 		$config['production_status'] = false; 
@@ -59,17 +62,17 @@ class WC_UPS_Label {
 		/**
 		 * Information pulled from WooCommerce settings
 		 */
-		$config['shipper_name'] 		  = get_option( WC_Shipping_Labels::$option_prefix . '_name' ); 
-		$config['shipper_attention_name'] = get_option( WC_Shipping_Labels::$option_prefix . '_attention_name' ); 
-		$config['shipper_phone'] 		  = get_option( WC_Shipping_Labels::$option_prefix . '_phone' ); 
-		$config['shipper_email'] 		  = get_option( WC_Shipping_Labels::$option_prefix . '_email' );
-		$config['shipper_address1'] 	  = get_option( WC_Shipping_Labels::$option_prefix . '_address' ); 
-		$config['shipper_address2'] 	  = get_option( WC_Shipping_Labels::$option_prefix . '_address_2' );
-		$config['shipper_address3'] 	  = get_option( WC_Shipping_Labels::$option_prefix . '_address_3' ); 
-		$config['shipper_city'] 		  = get_option( WC_Shipping_Labels::$option_prefix . '_city' );
-		$config['shipper_state'] 		  = get_option( WC_Shipping_Labels::$option_prefix . '_state' ); 
-		$config['shipper_postal_code']    = get_option( WC_Shipping_Labels::$option_prefix . '_postcode' ); 
-		$config['shipper_country_code']   = get_option( WC_Shipping_Labels::$option_prefix . '_country' ); 
+		$config['shipper_name'] 		  = get_option( WC_Shipping_Settings::$option_prefix . '_name' ); 
+		$config['shipper_attention_name'] = get_option( WC_Shipping_Settings::$option_prefix . '_attention_name' ); 
+		$config['shipper_phone'] 		  = get_option( WC_Shipping_Settings::$option_prefix . '_phone' ); 
+		$config['shipper_email'] 		  = get_option( WC_Shipping_Settings::$option_prefix . '_email' );
+		$config['shipper_address1'] 	  = get_option( WC_Shipping_Settings::$option_prefix . '_address' ); 
+		$config['shipper_address2'] 	  = get_option( WC_Shipping_Settings::$option_prefix . '_address_2' );
+		$config['shipper_address3'] 	  = get_option( WC_Shipping_Settings::$option_prefix . '_address_3' ); 
+		$config['shipper_city'] 		  = get_option( WC_Shipping_Settings::$option_prefix . '_city' );
+		$config['shipper_state'] 		  = get_option( WC_Shipping_Settings::$option_prefix . '_state' ); 
+		$config['shipper_postal_code']    = get_option( WC_Shipping_Settings::$option_prefix . '_postcode' ); 
+		$config['shipper_country_code']   = get_option( WC_Shipping_Settings::$option_prefix . '_country' ); 
 
 		
 		$this->shipping_address = $address;
@@ -202,25 +205,25 @@ class WC_UPS_Label {
 
 	// create the shipper object for the appropriate shipping vendor and pass it the shipment and config data
 	// using UPS
-	public function createShipper( $shipper = 'ups' ) {
+	public function createShipper() {
 		global $config;
 
-		if($shipper == 'ups') {
+		if($this->shipper == 'ups') {
 		    $this->ShipperObj = new Ship\Ups( $this->Shipment, $config );
 		}
 		// unrecognized shipper
 		else {
-		    throw new \Exception('Unrecognized shipper (' . $shipper . ').');
+		    throw new \Exception('Unrecognized shipper (' . $this->shipper . ').');
 		}
 	}
 
 	public function createLabel() {
-		$this->createShipper();
+		$this->createShipper( $this->shipper );
 
 		try{
 		    // build parameters array to send to the createLabel method
 		    $params = array(
-		        'service_code' => self::$service_code
+		        'service_code' => $this->service_code
 		    );
 		    // call the createLabel method - a LabelResponse object will be returned unless there is an exception
 		    $Response = $this->ShipperObj->createLabel( $params );

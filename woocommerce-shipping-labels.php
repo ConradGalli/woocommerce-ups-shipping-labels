@@ -27,7 +27,10 @@
  * @since		1.0
  */
 
+namespace Awsp\Ship;
+
 define( 'WC_SHIPPING_LABELS_DIR', __FILE__ );
+define( 'WC_SHIPPING_LABELS_OPTIONS_PREFIX', 'woocommerce_ups' );
 
 // Include Woo functions
 if ( ! function_exists( 'woothemes_queue_update' ) || ! function_exists( 'is_woocommerce_active' ) ) {
@@ -46,26 +49,17 @@ if ( ! is_woocommerce_active() ) {
 	return;
 }
 
-/**
- * Display an error message 
- * 
- * @param type $message 
- * @return type
- */
-function meta_error( $message ) {
-	return printf( '<div class="error"><p>%s</p></div>', __( $message, 'woocommerce-ups' ) );
-}
-
 // Function to display an admin error notice
 function WC_Shipping_Labels_Error( $message = '' ) {
 	if( ! empty( $message ) ) {
-		return printf( '<div class="error"><p>%s</p></div>', __( $message, 'woocommerce-ups' ) );
+		return printf( '<div class="error"><p>%s</p></div>', __( $message, 'woocommerce-wcsl' ) );
 	}
 }
 add_action( 'admin_notices', 'WC_Shipping_Labels_Error' );
 
 require_once 'woocommerce-get-labels.php';
 require_once 'libs/WC_Shipping_Labels.php';
+require_once 'libs/WC_Shipping_Settings.php';
 
 
 $UPS = new WC_Shipping_Labels;
