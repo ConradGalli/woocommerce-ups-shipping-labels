@@ -1,5 +1,17 @@
-.woocommerce-shipping-label-meta-box {
+.woocommerce-shipping-label-meta-box,
+.woocommerce-shipping-packages-box {
 	overflow: hidden;
+}
+.woocommerce-shipping-label-meta-box label,
+.woocommerce-shipping-packages-box label {
+	display: block;
+	clear: both;
+	margin: 2px 0px 8px 0;
+}
+.woocommerce-shipping-label-meta-box input,
+.woocommerce-shipping-label-meta-box select,
+.woocommerce-shipping-label-meta-box textarea {
+	margin: 1px 0 8px 0;
 }
 .woocommerce-shipping-label-print-option {
 	width: 100%;
@@ -13,4 +25,40 @@
 }
 .wc_ups_labels img {
 	max-width: 100%;
+}
+
+#wcsl-option-advanced-button {
+
+}
+
+#wcsl-option-package-dimensions-length,
+#wcsl-option-package-dimensions-width,
+#wcsl-option-package-dimensions-height {
+	width: 25%;
+}
+
+#postbox-container-2 .package {
+	margin-right: 10px;
+	float: left;
+}
+.woocommerce-shipping-packages-box .packages {
+	overflow: hidden;
+}
+.woocommerce-shipping-packages-box .package {
+	box-shadow: 0 1px 1px rgba(0,0,0,.04);
+	margin-bottom: 10px;
+	width: 25%;
+}
+.woocommerce-shipping-packages-box .package header {
+	padding: 8px 12px;
+	border: 1px solid #e5e5e5;
+	background: #f5f5f5;
+	border-top-left-radius: 2px;
+	border-top-right-radius: 2px;
+}
+.woocommerce-shipping-packages-box .package .inside {
+	margin: 0 !important;
+	border: 1px solid #e5e5e5;
+	border-top: 0;
+	padding-top: 12px;
 }

@@ -95,6 +95,45 @@ class Ups implements ShipperInterface {
         // UPS account number
         $this->request['Shipment']['Shipper']['ShipperNumber'] = $config['ups']['account_number'];
     }
+
+    /**
+     * Validate 
+     * 
+     * @return type
+     */
+    public function validateUPSCredentials() {
+        $errors = array();
+
+        switch( true ) {
+            // UPS account number empty
+            case get_option( WC_Shipping_Settings::$option_prefix . '_ups_account_number' ) == '':
+                $errors[] = 'UPS account number required.';
+                break;
+            // UPS account number empty
+            case get_option( WC_Shipping_Settings::$option_prefix . '_ups_access_key' ) == '':
+                $errors[] = 'UPS access key required.';
+                break;
+            // UPS account number empty
+            case get_option( WC_Shipping_Settings::$option_prefix . '_ups_username' ) == '':
+                $errors[] = 'UPS account username required.';
+                break;
+            // UPS account number empty
+            case get_option( WC_Shipping_Settings::$option_prefix . '_ups_password' ) == '':
+                $errors[] = 'UPS account password required.';
+                break;
+
+            default:
+                //
+        }
+
+        if( empty( $errors ) )
+            return true;
+
+        foreach( $errors as $message )
+            WC_Shipping_Labels_Error( $message );
+
+        return false;
+    }
     
     
     /**
@@ -149,8 +188,8 @@ class Ups implements ShipperInterface {
         $this->request['Request']['RequestOption'] = 'Shop';
 
         // extract shipper information from the config array
-        $this->request['Shipment']['Shipper']['Address']['PostalCode'] = $this->config['ups']['shipper_postal_code'];
-        $this->request['Shipment']['Shipper']['Address']['CountryCode'] = $this->config['ups']['shipper_country_code'];
+        $this->request['Shipment']['Shipper']['Address']['PostalCode'] = $this->config['shipper_postal_code'];
+        $this->request['Shipment']['Shipper']['Address']['CountryCode'] = $this->config['shipper_country_code'];
         
         // check for a different shipping from location
         if($this->Shipment->get('ship_from_different_address') == true) {
@@ -262,81 +301,23 @@ class Ups implements ShipperInterface {
         $this->request['Request']['RequestOption'] = 'nonvalidate';
 
         // extract shipper information from config array
-        $this->request['Shipment']['Shipper']['Name'] = $this->config['ups']['shipper_name'];
-        $this->request['Shipment']['Shipper']['AttentionName'] = $this->config['ups']['shipper_attention_name'];
-        $this->request['Shipment']['Shipper']['Phone']['Number'] = $this->config['ups']['shipper_phone'];
-        $this->request['Shipment']['Shipper']['EMailAddress'] = $this->config['ups']['shipper_email'];
-        $this->request['Shipment']['Shipper']['Address']['AddressLine'][] = $this->config['ups']['shipper_address1'];
-        if($this->config['ups']['shipper_address2'] != null) {
+        $this->request['Shipment']['Shipper']['Name'] = $this->config['shipper_name'];
+        $this->request['Shipment']['Shipper']['AttentionName'] = $this->config['shipper_attention_name'];
+        $this->request['Shipment']['Shipper']['Phone']['Number'] = $this->config['shipper_phone'];
+        $this->request['Shipment']['Shipper']['EMailAddress'] = $this->config['shipper_email'];
+        $this->request['Shipment']['Shipper']['Address']['AddressLine'][] = $this->config['shipper_address1'];
+        if($this->config['shipper_address2'] != null) {
             $this->request['Shipment']['Shipper']['Address']['AddressLine'][] = 
-                    $this->config['ups']['shipper_address2'];
+                    $this->config['shipper_address2'];
         }
-        if($this->config['ups']['shipper_address3'] != null) {
+        if($this->config['shipper_address3'] != null) {
             $this->request['Shipment']['Shipper']['Address']['AddressLine'][] = 
-                    $this->config['ups']['shipper_address3'];
+                    $this->config['shipper_address3'];
         }
-        $this->request['Shipment']['Shipper']['Address']['City'] = $this->config['ups']['shipper_city'];
-        $this->request['Shipment']['Shipper']['Address']['StateProvinceCode'] = $this->config['ups']['shipper_state'];
-        $this->request['Shipment']['Shipper']['Address']['PostalCode'] = $this->config['ups']['shipper_postal_code'];
-        $this->request['Shipment']['Shipper']['Address']['CountryCode'] = $this->config['ups']['shipper_country_code'];
-        
-        // check for a different shipping from location
-        // Set Shipment/ShipFrom values and override Ship/Shipper/Address values
-        if($this->Shipment->get('ship_from_different_address') == true) {
-            // name
-            $this->request['Shipment']['ShipFrom']['Name'] = $this->Shipment->get('shipping_from_name');
-            $this->request['Shipment']['Shipper']['Name'] = $this->Shipment->get('shipping_from_name');
-            // attention            
-            $this->request['Shipment']['ShipFrom']['AttentionName'] = 
-                    $this->Shipment->get('shipping_from_attention_name');
-            $this->request['Shipment']['Shipper']['AttentionName'] = 
-                    $this->Shipment->get('shipping_from_attention_name');
-            // phone            
-            $this->request['Shipment']['ShipFrom']['Phone']['Number'] = $this->Shipment->get('shipping_from_phone');
-            $this->request['Shipment']['Shipper']['Phone']['Number'] = $this->Shipment->get('shipping_from_phone');
-            // email
-            $this->request['Shipment']['ShipFrom']['EMailAddress'] = $this->Shipment->get('shipping_from_email');
-            $this->request['Shipment']['Shipper']['EMailAddress'] = $this->Shipment->get('shipping_from_email');
-            // address 1
-            $this->request['Shipment']['ShipFrom']['Address']['AddressLine'][] = 
-                    $this->Shipment->get('shipping_from_address1');
-            // clear out this array to remove any information from the shipper info
-            $this->request['Shipment']['Shipper']['Address']['AddressLine'] = null;
-            $this->request['Shipment']['Shipper']['Address']['AddressLine'][] = 
-                    $this->Shipment->get('shipping_from_address1');
-            // address 2
-            if($this->Shipment->get('shipping_from_address2') != null) {
-                $this->request['Shipment']['ShipFrom']['Address']['AddressLine'][] = 
-                        $this->Shipment->get('shipping_from_address2');
-                $this->request['Shipment']['Shipper']['Address']['AddressLine'][] = 
-                        $this->Shipment->get('shipping_from_address2');
-            }
-            // address 3
-            if($this->Shipment->get('shipping_from_address3') != null) {
-                $this->request['Shipment']['ShipFrom']['Address']['AddressLine'][] = 
-                        $this->Shipment->get('shipping_from_address3');
-                $this->request['Shipment']['Shipper']['Address']['AddressLine'][] = 
-                        $this->Shipment->get('shipping_from_address3');
-            }
-            // city
-            $this->request['Shipment']['ShipFrom']['Address']['City'] = $this->Shipment->get('shipping_from_city');
-            $this->request['Shipment']['Shipper']['Address']['City'] = $this->Shipment->get('shipping_from_city');
-            // state/province            
-            $this->request['Shipment']['ShipFrom']['Address']['StateProvinceCode'] = 
-                    $this->Shipment->get('shipping_from_state');
-            $this->request['Shipment']['Shipper']['Address']['StateProvinceCode'] = 
-                    $this->Shipment->get('shipping_from_state');
-            // postal code
-            $this->request['Shipment']['ShipFrom']['Address']['PostalCode'] = 
-                    $this->Shipment->get('shipping_from_postal_code');
-            $this->request['Shipment']['Shipper']['Address']['PostalCode'] = 
-                    $this->Shipment->get('shipping_from_postal_code');
-            // country code
-            $this->request['Shipment']['ShipFrom']['Address']['CountryCode'] = 
-                    $this->Shipment->get('shipping_from_country_code');
-            $this->request['Shipment']['Shipper']['Address']['CountryCode'] = 
-                    $this->Shipment->get('shipping_from_country_code');
-        }
+        $this->request['Shipment']['Shipper']['Address']['City'] = $this->config['shipper_city'];
+        $this->request['Shipment']['Shipper']['Address']['StateProvinceCode'] = $this->config['shipper_state'];
+        $this->request['Shipment']['Shipper']['Address']['PostalCode'] = $this->config['shipper_postal_code'];
+        $this->request['Shipment']['Shipper']['Address']['CountryCode'] = $this->config['shipper_country_code'];
 
         // receiver information
         $this->request['Shipment']['ShipTo']['Name'] = $this->Shipment->get('receiver_name');
@@ -361,8 +342,7 @@ class Ups implements ShipperInterface {
             $this->request['Shipment']['ShipTo']['Address']['ResidentialAddressIndicator'] = '';
         }
         
-        $this->request['Shipment']['PaymentInformation']['ShipmentCharge']['BillShipper']['AccountNumber'] = 
-                $this->config['ups']['account_number'];
+        $this->request['Shipment']['PaymentInformation']['ShipmentCharge']['BillShipper']['AccountNumber'] = $this->config['ups']['account_number'];
         $this->request['Shipment']['Service']['Code'] = $params['service_code'];
         
         // billing for transportation charges
@@ -506,11 +486,7 @@ class Ups implements ShipperInterface {
             // extract the error details from SoapFault object
             $error_detail = $e->detail->Errors->ErrorDetail;
 
-            \WC_Shipping_Labels_Error( __( 'UPS Error: ', 'woocommerce-ups' ) . $error_detail->PrimaryErrorCode->Description );
-
-            //print_r( $error_detail );
-            // rethrow a more useful exception message
-           // throw new \Exception('UPS SOAP Request failed - ' . $e->getMessage() . ' - Serialized Details: ' . $error_detail);
+            throw new \Exception( __( 'UPS Error: ' . $error_detail->PrimaryErrorCode->Description, 'woocommerce-ups' ) );
         }
    }
     

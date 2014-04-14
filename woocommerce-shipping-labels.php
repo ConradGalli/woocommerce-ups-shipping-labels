@@ -55,13 +55,13 @@ function WC_Shipping_Labels_Error( $message = '' ) {
 		return printf( '<div class="error"><p>%s</p></div>', __( $message, 'woocommerce-wcsl' ) );
 	}
 }
-add_action( 'admin_notices', 'WC_Shipping_Labels_Error' );
+add_action( 'admin_notices', 'Awsp\Ship\WC_Shipping_Labels_Error' );
 
-require_once 'woocommerce-get-labels.php';
+require_once 'woocommerce-shipping.php';
 require_once 'libs/WC_Shipping_Labels.php';
 require_once 'libs/WC_Shipping_Settings.php';
 
 
 $UPS = new WC_Shipping_Labels;
 
-register_activation_hook( __FILE__, array( 'WC_Shipping_Labels', 'activate' ) );
+\register_activation_hook( __FILE__, array( 'WC_Shipping_Labels', 'activate' ) );

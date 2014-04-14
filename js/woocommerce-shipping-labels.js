@@ -1,5 +1,7 @@
 (function($) {
 
+	var package_el = $('#wcsl-package-template').html()
+
 	function woocommerceCreateShippingLabel(e) {
 		e.preventDefault();
 		
@@ -8,7 +10,7 @@
 
 		/* UPS */
 		var UPS = {
-			service_code: $('#wcsl_option_ups_service_code').val()
+			service_code: $('#wcsl-option-ups-service-code').val()
 		};
 
 		var data = {
@@ -24,7 +26,24 @@
 		return false;
 	}
 
+	function togglePackageVisibility(e) {
+		e.preventDefault();
+
+		$(this).siblings('.inside').slideToggle();
+	}
+
+	function addPackage(e) {
+		e.preventDefault();
+
+		$('.packages').hide().append( package_el ).fadeIn();
+	}
+
 
 	$('#woocommerce-shipping-label-option-button').on( 'click', woocommerceCreateShippingLabel );
+
+	$('#woocommerce-shipping-label-add-package-button').on( 'click', addPackage );
+
+	// Toggle package details
+	$('.package .hndle').on('click', togglePackageVisibility );
 
 })(jQuery);
