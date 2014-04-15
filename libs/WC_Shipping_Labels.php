@@ -26,6 +26,8 @@ class WC_Shipping_Labels {
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_scripts' ) );
 		add_action( 'wp_ajax_generateLabel', array( $this, 'generateLabel' ) );
 		add_action( 'save_post', array( $this, 'save_packages' ), 10, 2 );
+
+		add_action( 'wp_ajax_wcsl_get_packages', 'Awsp\Ship\WC_Shipping_Labels::get_packages' );
 	}
 
 	/**
@@ -89,37 +91,33 @@ class WC_Shipping_Labels {
 	}
 
 	public function shipping_packages_meta_box() {
-		global $post; print_r( woocommerce_get_order_item_meta( $post->ID, '_wcsl_packages', false ) ); ?>
+		global $post; ?>
 		<div class="woocommerce-shipping-packages-box">
 			<p><?php _e( 'Packages <em>will not</em> be saved until you click Save Order.', 'woocommerce-wcsl' ); ?></p>
 			<div class="packages">
 				<?php
 					// Retrieve existing packages
-
+					
 
 					?>
-				<script type="text/template" id="wcsl-package-template">
-					<div class="package">
-						<header class="hndle">Package</header>
-						<div class="inside">
-							<label for="wcsl-option-package-weight"><?php _e( 'Package Weight', 'woocommerce-wcsl' ); ?></label>
-							<input type="text" name="wcsl_option_package_weight[]" id="wcsl-option-package-weight" placeholder="0.00" />
-
-							<label for="wcsl-option-package-dimensions-length"><?php _e( 'Package Dimensions', 'woocommerce-wcsl' ); ?></label>
-							<input type="text" name="wcsl_option_package_dimensions_length[]" id="wcsl-option-package-dimensions-length" placeholder="L" /> x 
-							<input type="text" name="wcsl_option_package_dimensions_width[]" id="wcsl-option-package-dimensions-width" placeholder="W" /> x 
-							<input type="text" name="wcsl_option_package_dimensions_height[]" id="wcsl-option-package-dimensions-height" placeholder="H" />
-
-							<label><input type="checkbox" name="wcsl_option_package_signature_required[]" /> <?php _e( 'Signature Required?', 'woocommerce-wcsl' ); ?></label>
-						</div>
-					</div>
-				</script>
+				
 			</div>
 			<p>
 				<button type="button" class="button" id="woocommerce-shipping-label-add-package-button"><?php _e( 'Add Package', 'woocommerce-wcsl' ); ?></button>
 			</p>
 		</div>
 	<?php	
+	}
+
+	public static function get_packages() {
+		$post = $_REQUEST['post'];
+
+		$meta = woocommerce_get_order_item_meta( $post, '_wcsl_packages', true  );
+
+		print json_encode( $meta );
+
+		exit;
+
 	}
 
 	public function save_packages() {
@@ -129,15 +127,35 @@ class WC_Shipping_Labels {
 		if( get_post_type( $post->ID ) != 'shop_order' )
 			return;
 
-		woocommerce_update_order_item_meta( $post->ID, '_wcsl_packages', array( 'test' => 'wat' ) );
+		// Determine count from package weight
+		$count = count( $_POST['wcsl_option_package_weight'] );
+		$packages = array();
+
+		for( $i = 0; $i < $count; $i++ ) {
+			$packages[] = array(
+				'weight' => $_POST['wcsl_option_package_weight'][$i],
+				'length' => $_POST['wcsl_option_package_dimensions_length'][$i],
+				'width' => $_POST['wcsl_option_package_dimensions_width'][$i],
+				'height' => $_POST['wcsl_option_package_dimensions_height'][$i],
+				'signature' => $_POST['wcsl_option_package_signature_required'][$i]
+			);
+		}
+
+		woocommerce_update_order_item_meta( $post->ID, '_wcsl_packages', $packages );
 	}
 
 	public function admin_scripts( $hook ) {
+		global $post;
+
 		if( 'post.php' != $hook ) return;
 
 		wp_enqueue_style( 'woocommerce-shipping-labels-css', plugins_url( 'css/woocommerce-shipping-labels.css', WC_SHIPPING_LABELS_DIR ) );
 
-		wp_enqueue_script( 'woocommerce-shipping-labels-js', plugins_url( 'js/woocommerce-shipping-labels.js', WC_SHIPPING_LABELS_DIR ), array( 'jquery' ), '1.0', true );
+		wp_register_script( 'woocommerce-shipping-labels-js', plugins_url( 'js/woocommerce-shipping-labels.js', WC_SHIPPING_LABELS_DIR ), array( 'jquery' ), '1.0', true );
+
+		wp_localize_script( 'woocommerce-shipping-labels-js', 'wcsl_object', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ), 'post_id' => $post->ID ) );
+
+		wp_enqueue_script( 'woocommerce-shipping-labels-js' );
 	}
 
 	public function order_address( \WC_ORDER $order ) {
