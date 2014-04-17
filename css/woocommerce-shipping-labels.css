@@ -31,9 +31,9 @@
 
 }
 
-#wcsl-option-package-dimensions-length,
-#wcsl-option-package-dimensions-width,
-#wcsl-option-package-dimensions-height {
+.package .wcsl-option-package-dimensions-length,
+.package .wcsl-option-package-dimensions-width,
+.package .wcsl-option-package-dimensions-height {
 	width: 25%;
 }
 
@@ -47,7 +47,7 @@
 .woocommerce-shipping-packages-box .package {
 	box-shadow: 0 1px 1px rgba(0,0,0,.04);
 	margin-bottom: 10px;
-	width: 25%;
+	width: 23%;
 }
 .woocommerce-shipping-packages-box .package header {
 	padding: 8px 12px;

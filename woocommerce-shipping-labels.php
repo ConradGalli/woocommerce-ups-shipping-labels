@@ -61,6 +61,6 @@ require_once 'woocommerce-shipping.php';
 require_once 'libs/WC_Shipping_Labels.php';
 require_once 'libs/WC_Shipping_Settings.php';
 
-$UPS = new WC_Shipping_Labels;
+$wcsl = new WC_Shipping_Labels;
 
 \register_activation_hook( __FILE__, array( 'WC_Shipping_Labels', 'activate' ) );

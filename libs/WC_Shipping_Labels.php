@@ -27,7 +27,7 @@ class WC_Shipping_Labels {
 		add_action( 'wp_ajax_generateLabel', array( $this, 'generateLabel' ) );
 		add_action( 'save_post', array( $this, 'save_packages' ), 10, 2 );
 
-		add_action( 'wp_ajax_wcsl_get_packages', 'Awsp\Ship\WC_Shipping_Labels::get_packages' );
+		add_action( 'wp_ajax_wcsl_get_packages', 'Awsp\Ship\WC_Shipping_Labels::get_packages_json' );
 	}
 
 	/**
@@ -57,7 +57,7 @@ class WC_Shipping_Labels {
 		add_meta_box( 'woocommerce-shipping-packages', __( 'Shipping Packages', 'woocommerce-wcsl' ), array( $this, 'shipping_packages_meta_box' ), 'shop_order', 'side', 'default' );
 
 		// Shipping Label
-		add_meta_box( 'woocommerce-shipping-label', __( 'Shipping Label', 'woocommerce-wcsl' ), array( $this, 'shipping_label_meta_box' ), 'shop_order', 'side', 'default' );
+		add_meta_box( 'woocommerce-shipping-label', __( 'Shipping Label', 'woocommerce-wcsl' ), array( $this, 'shipping_label_meta_box' ), 'shop_order', 'normal', 'default' );
 	}
 
 	/**
@@ -90,18 +90,15 @@ class WC_Shipping_Labels {
 	<?php
 	}
 
-	public function shipping_packages_meta_box() {
-		global $post; ?>
+	/**
+	 * Meta box for the packages
+	 * 
+	 * @return type
+	 */
+	public function shipping_packages_meta_box() { ?>
 		<div class="woocommerce-shipping-packages-box">
 			<p><?php _e( 'Packages <em>will not</em> be saved until you click Save Order.', 'woocommerce-wcsl' ); ?></p>
-			<div class="packages">
-				<?php
-					// Retrieve existing packages
-					
-
-					?>
-				
-			</div>
+			<div class="packages"></div>
 			<p>
 				<button type="button" class="button" id="woocommerce-shipping-label-add-package-button"><?php _e( 'Add Package', 'woocommerce-wcsl' ); ?></button>
 			</p>
@@ -109,17 +106,34 @@ class WC_Shipping_Labels {
 	<?php	
 	}
 
-	public static function get_packages() {
-		$post = $_REQUEST['post'];
+	/**
+	 * Get packages in JSON format
+	 * Used for AJAX call
+	 * 
+	 * @return type
+	 */
+	public static function get_packages_json() {
+		$meta = woocommerce_get_order_item_meta( $_REQUEST['post'], '_wcsl_packages', true  );
 
-		$meta = woocommerce_get_order_item_meta( $post, '_wcsl_packages', true  );
-
-		print json_encode( $meta );
-
-		exit;
-
+		die( json_encode( $meta ) );
 	}
 
+	/**
+	 * Returns array of packages
+	 * 
+	 * @return type
+	 */
+	public function get_packages( $id = '' ) {
+		global $post;
+
+		return woocommerce_get_order_item_meta( $id, '_wcsl_packages', true );
+	}
+
+	/**
+	 * Save packages when Save Order is clicked
+	 * 
+	 * @return type
+	 */
 	public function save_packages() {
 		global $post;
 
@@ -128,7 +142,7 @@ class WC_Shipping_Labels {
 			return;
 
 		// Determine count from package weight
-		$count = count( $_POST['wcsl_option_package_weight'] );
+		$count    = count( $_POST['wcsl_option_package_weight'] );
 		$packages = array();
 
 		for( $i = 0; $i < $count; $i++ ) {

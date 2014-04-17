@@ -166,7 +166,8 @@ class WC_Shipping {
 	 */
 	public function createPackage() {
 		try {
-		    $Package1 = new Ship\Package(
+			foreach( $wcsl->get_packages( $this->order->id ) as $package ) {
+				$Package1 = new Ship\Package(
 		            24, // weight 
 		            array(10, 6, 12), // dimensions
 		            array( // options
@@ -174,7 +175,10 @@ class WC_Shipping {
 		                'insured_amount' => 274.95
 		            )
 		        );
-		    $this->Shipment->addPackage( $Package1 );
+
+		    	$this->Shipment->addPackage( $Package1 );
+			}
+		    
 		}
 		// catch any exceptions 
 		catch(\Exception $e) {
