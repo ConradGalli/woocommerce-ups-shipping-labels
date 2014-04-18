@@ -152,7 +152,7 @@ class WC_Shipping {
 		}
 		// catch any exceptions 
 		catch(\Exception $e) {
-		    exit('<br /><br />Error: ' . $e->getMessage() . '<br /><br />');    
+		   exit( WC_Shipping_Labels_Error( $e->getMessage() ) );  
 		}
 	}
 
@@ -165,8 +165,17 @@ class WC_Shipping {
 	 * @return type
 	 */
 	public function createPackage() {
+		global $wcsl;
+
 		try {
-			foreach( $wcsl->get_packages( $this->order->id ) as $package ) {
+			$packages = $wcsl->get_packages( $this->order->id );
+
+			// Are there any packages created for this order?
+			if( empty( $packages ) ) {
+				throw new \Exception( __( 'Please create a package before generating a label.', 'woocommerce-wcsl' ) );
+			}
+
+			foreach( $packages as $package ) {
 				$Package1 = new Ship\Package(
 		            24, // weight 
 		            array(10, 6, 12), // dimensions
@@ -182,7 +191,7 @@ class WC_Shipping {
 		}
 		// catch any exceptions 
 		catch(\Exception $e) {
-		    exit('<br /><br />Error: ' . $e->getMessage() . '<br /><br />');    
+		    exit( WC_Shipping_Labels_Error( $e->getMessage() ) );    
 		}
 
 		/*
@@ -227,8 +236,7 @@ class WC_Shipping {
 		}
 		// display any caught exception messages
 		catch(\Exception $e){
-		    WC_Shipping_Labels_Error( $e->getMessage() );
-		    exit;
+		    exit( WC_Shipping_Labels_Error( $e->getMessage() ) );  
 		}
 
 		foreach( $Response->labels as $label ) {

@@ -11,9 +11,13 @@ class WC_Shipping_Settings {
 	public static $option_prefix = 'woocommerce_ups';
 
 	public function __construct() {
+		// Are we in WooCommerce settings?
+		if( esc_url( $_GET['page'] ) != 'woocommerce_settings' )
+			return;
+
 		global $current_section;
 
-		$current_section = $_GET['section'];
+		$current_section = esc_url( $_GET['section'] );
 
 		$this->id = __( 'shipping_labels', 'woocommerce-wcsl' );
 
