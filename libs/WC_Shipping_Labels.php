@@ -13,7 +13,12 @@ class WC_Shipping_Labels {
 			'enabled' => true,
 			'slug' => 'ups',
 			'label' => 'UPS',
-			'object' => 'Awsp\\Ship\\UPS' )
+			'object' => 'Awsp\\Ship\\UPS' ),
+		'fedex' => array(
+			'enabled' => true,
+			'slug' => 'fedex',
+			'label' => 'Fedex',
+			'object' => 'Awsp\\Ship\\Fedex' )
 	);
 
 	/**
@@ -185,6 +190,10 @@ class WC_Shipping_Labels {
 	public function generateLabel() {
 		$orderID = $_POST['orderID'];
 		$carrier = $_POST['carrier'];
+
+		if( ! function_exists( 'openssl_encrypt' ) ) {
+			return WC_Shipping_Labels_Error( 'PHP extension <a href="http://www.php.net/manual/en/book.openssl.php" target="_blank">OpenSSL</a> must be installed to use this plugin.' );
+		}
 
 		// Can we get the order ID?
 		if( ! isset( $orderID ) || empty( $orderID ) ) {

@@ -27,6 +27,7 @@ require_once 'libs/Awsp/Ship/RateResponse.php';
 require_once 'libs/Awsp/Ship/Shipment.php';
 require_once 'libs/Awsp/Ship/ShipperInterface.php';
 require_once 'libs/Awsp/Ship/Ups.php';
+require_once 'libs/Awsp/Ship/Fedex.php';
 
 class WC_Shipping {
 
@@ -122,6 +123,10 @@ class WC_Shipping {
 		53 - Standard List Rates
 		*/
 		$config['ups']['rate_type'] = '00'; 
+
+
+		$config['fedex'] = array();
+		//$config['fedex'] = 
 	}
 
 	public function getReceiverData() {
@@ -216,6 +221,8 @@ class WC_Shipping {
 
 		if($this->shipper == 'ups') {
 		    $this->ShipperObj = new Ship\Ups( $this->Shipment, $config );
+		}elseif( $this->shipper == 'fedex' ) {
+			$this->ShipperObj = new Ship\Fedex( $this->Shipment, $config );
 		}
 		// unrecognized shipper
 		else {
