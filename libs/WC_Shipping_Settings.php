@@ -12,7 +12,7 @@ class WC_Shipping_Settings {
 
 	public function __construct() {
 		// Are we in WooCommerce settings?
-		if( esc_url( $_GET['page'] ) != 'woocommerce_settings' )
+		if( $_GET['page'] != 'woocommerce_settings' )
 			return;
 
 		global $current_section;

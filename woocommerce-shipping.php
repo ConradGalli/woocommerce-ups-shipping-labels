@@ -21,6 +21,7 @@ $config = array();
 define('SHIP_PATH', plugin_dir_path( __FILE__ ) . 'libs/');
 
 require_once 'includes/config.php';
+require_once 'libs/WC_Shipping_Settings.php';
 require_once 'libs/Awsp/Ship/LabelResponse.php';
 require_once 'libs/Awsp/Ship/Package.php';
 require_once 'libs/Awsp/Ship/RateResponse.php';
@@ -73,17 +74,17 @@ class WC_Shipping {
 		/**
 		 * Information pulled from WooCommerce settings
 		 */
-		$config['shipper_name'] 		  = get_option( WC_Shipping_Settings::$option_prefix . '_name' ); 
-		$config['shipper_attention_name'] = get_option( WC_Shipping_Settings::$option_prefix . '_attention_name' ); 
-		$config['shipper_phone'] 		  = get_option( WC_Shipping_Settings::$option_prefix . '_phone' ); 
-		$config['shipper_email'] 		  = get_option( WC_Shipping_Settings::$option_prefix . '_email' );
-		$config['shipper_address1'] 	  = get_option( WC_Shipping_Settings::$option_prefix . '_address' ); 
-		$config['shipper_address2'] 	  = get_option( WC_Shipping_Settings::$option_prefix . '_address_2' );
-		$config['shipper_address3'] 	  = get_option( WC_Shipping_Settings::$option_prefix . '_address_3' ); 
-		$config['shipper_city'] 		  = get_option( WC_Shipping_Settings::$option_prefix . '_city' );
-		$config['shipper_state'] 		  = get_option( WC_Shipping_Settings::$option_prefix . '_state' ); 
-		$config['shipper_postal_code']    = get_option( WC_Shipping_Settings::$option_prefix . '_postcode' ); 
-		$config['shipper_country_code']   = get_option( WC_Shipping_Settings::$option_prefix . '_country' ); 
+		$config['shipper_name'] 		  = WCSL_Option( '_name' ); 
+		$config['shipper_attention_name'] = WCSL_Option( '_attention_name' ); 
+		$config['shipper_phone'] 		  = WCSL_Option( '_phone' ); 
+		$config['shipper_email'] 		  = WCSL_Option( '_email' );
+		$config['shipper_address1'] 	  = WCSL_Option( '_address' ); 
+		$config['shipper_address2'] 	  = WCSL_Option( '_address_2' );
+		$config['shipper_address3'] 	  = WCSL_Option( '_address_3' ); 
+		$config['shipper_city'] 		  = WCSL_Option( '_city' );
+		$config['shipper_state'] 		  = WCSL_Option( '_state' ); 
+		$config['shipper_postal_code']    = WCSL_Option( '_postcode' ); 
+		$config['shipper_country_code']   = WCSL_Option( '_country' ); 
 
 		$this->getShipperData();
 		$this->getReceiverData();

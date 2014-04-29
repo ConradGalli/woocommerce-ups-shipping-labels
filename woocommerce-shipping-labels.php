@@ -49,6 +49,11 @@ if ( ! is_woocommerce_active() ) {
 	return;
 }
 
+// Get WooCommerce option
+function WCSL_Option( $key ) {
+	return get_option( WC_Shipping_Settings::$option_prefix . $key );
+}
+
 // Function to display an admin error notice
 function WC_Shipping_Labels_Error( $message = '' ) {
 	if( ! empty( $message ) ) {

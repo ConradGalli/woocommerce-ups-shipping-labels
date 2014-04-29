@@ -195,6 +195,10 @@ class WC_Shipping_Labels {
 			return WC_Shipping_Labels_Error( 'PHP extension <a href="http://www.php.net/manual/en/book.openssl.php" target="_blank">OpenSSL</a> must be installed to use this plugin.' );
 		}
 
+		if( empty( WCSL_Option( '_name' ) ) ) {
+			return WC_Shipping_Labels_Error( sprintf( 'You need to <a href="%s">set your shipper settings</a> before generating a shipping label.', admin_url( 'admin.php?page=woocommerce_settings&tab=shipping_labels' ) ) );
+		}
+
 		// Can we get the order ID?
 		if( ! isset( $orderID ) || empty( $orderID ) ) {
 			return WC_Shipping_Labels_Error( 'An error occured while attempting to retrieve the order ID.' );
