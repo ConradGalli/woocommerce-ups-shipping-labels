@@ -188,14 +188,16 @@ class WC_Shipping_Labels {
 	}
 
 	public function generateLabel() {
-		$orderID = $_POST['orderID'];
-		$carrier = $_POST['carrier'];
-
+		
 		if( ! function_exists( 'openssl_encrypt' ) ) {
 			return WC_Shipping_Labels_Error( 'PHP extension <a href="http://www.php.net/manual/en/book.openssl.php" target="_blank">OpenSSL</a> must be installed to use this plugin.' );
 		}
 
-		if( empty( WCSL_Option( '_name' ) ) ) {
+		$orderID = $_POST['orderID'];
+		$carrier = $_POST['carrier'];
+		$shipper_name = WCSL_Option( '_name' );
+
+		if( empty( $shipper_name ) ) {
 			return WC_Shipping_Labels_Error( sprintf( 'You need to <a href="%s">set your shipper settings</a> before generating a shipping label.', admin_url( 'admin.php?page=woocommerce_settings&tab=shipping_labels' ) ) );
 		}
 
